@@ -7,16 +7,16 @@ using UnityEngine;
 public class MainCharacterBehavior : MonoBehaviour
 {
 
-    bool moveUp, moveDown, moveRight, moveLeft;
+    bool moveUp, moveDown, moveRight, moveLeft, grounded;
     public bool debugMode = true;
 
     Vector2 moveVector;
 
-    float charHeight, charLength, skin = 0.001f, extraRayDistance, pushout = 0.0001f, distanceBetweenRays = 0.05f, rayIter;
+    float charHeight, charLength, skin = 0.001f, extraRayDistance, pushout = 0.0001f, distanceBetweenRays = 0.05f, rayIter, originalXMovement, originalYCord;
 
-    int groundMask, verticleRayCount, horizontalRayCount;
+    int groundMask, verticleRayCount, horizontalRayCount, collisionType;
 
-    public float speed = 15;
+    public float speed = 15, slopeAngle = 1, groundCheckDistance = 0.02f;
 
     RaycastHit2D colData;
 
@@ -39,15 +39,19 @@ public class MainCharacterBehavior : MonoBehaviour
 
     void Update()
     {
-        MoveWithCollision();
+
+        GetPlayerInput();
+
+        CheckForFloor();
+
+        UseCollision();
+
     }
 
 
 
     void MoveWithCollision()
     {
-        //TEMP
-        GetPlayerInput();
 
         TestPlayerDirection();
 
@@ -73,7 +77,7 @@ public class MainCharacterBehavior : MonoBehaviour
     void GetPlayerInput()
     {
 
-        moveVector = new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical"));
+        moveVector = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         moveVector *= Time.deltaTime * speed;
 
     }
@@ -126,7 +130,7 @@ public class MainCharacterBehavior : MonoBehaviour
 
         if (moveUp && moveVector.y > 0)
         {
-            colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2) + skin, gameObject.transform.position.y + (charHeight / 2) + skin), new Vector2(1, 0), charLength - (skin*2), groundMask);
+            colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2) + skin, gameObject.transform.position.y + (charHeight / 2) + skin), new Vector2(1, 0), charLength - (skin * 2), groundMask);
             if (colData.collider != null)
             {
                 moveVector.y = 0;
@@ -140,7 +144,7 @@ public class MainCharacterBehavior : MonoBehaviour
 
         if (moveDown && moveVector.y < 0)
         {
-            colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2) + skin, gameObject.transform.position.y - (charHeight / 2) - skin), new Vector2(1, 0), charLength - (skin*2), groundMask);
+            colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2) + skin, gameObject.transform.position.y - (charHeight / 2) - skin), new Vector2(1, 0), charLength - (skin * 2), groundMask);
             if (colData.collider != null)
             {
                 moveVector.y = 0;
@@ -154,7 +158,7 @@ public class MainCharacterBehavior : MonoBehaviour
 
         if (moveRight && moveVector.x > 0)
         {
-            colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x + (charLength / 2) + skin, gameObject.transform.position.y - (charHeight / 2) + skin), new Vector2(0, 1), charHeight - (skin*2), groundMask);
+            colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x + (charLength / 2) + skin, gameObject.transform.position.y - (charHeight / 2) + skin), new Vector2(0, 1), charHeight - (skin * 2), groundMask);
             if (colData.collider != null)
             {
                 moveVector.x = 0;
@@ -168,7 +172,7 @@ public class MainCharacterBehavior : MonoBehaviour
 
         if (moveLeft && moveVector.x < 0)
         {
-            colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2) - skin, gameObject.transform.position.y - (charHeight / 2) + skin), new Vector2(0, 1), charHeight - (skin*2), groundMask);
+            colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2) - skin, gameObject.transform.position.y - (charHeight / 2) + skin), new Vector2(0, 1), charHeight - (skin * 2), groundMask);
             if (colData.collider != null)
             {
                 moveVector.x = 0;
@@ -200,17 +204,17 @@ public class MainCharacterBehavior : MonoBehaviour
             extraRayDistance = charLength;
         }
 
-        horizontalRayCount = (int)Mathf.Floor((charLength - (skin*2)) / distanceBetweenRays);
-        verticleRayCount = (int)Mathf.Floor((charHeight - (skin*2)) / distanceBetweenRays);
+        horizontalRayCount = (int)Mathf.Floor((charLength - (skin * 2)) / distanceBetweenRays);
+        verticleRayCount = (int)Mathf.Floor((charHeight - (skin * 2)) / distanceBetweenRays);
 
         if (debugMode)
         {
             Debug.Log("CharL: " + charLength);
             Debug.Log("CharH: " + charHeight);
-            Debug.Log("Max Rays: " + (3 + 2 + 2 + horizontalRayCount + verticleRayCount));
+            //Debug.Log("Max Rays: " + (3 + 2 + 2 + horizontalRayCount + verticleRayCount));
         }
 
-    }       
+    }
 
     void CheckCol()
     {
@@ -218,7 +222,7 @@ public class MainCharacterBehavior : MonoBehaviour
 
         if (moveUp || moveRight)
         {
-            DrawColRays( (charLength / 2) - skin, (charHeight / 2) - skin );
+            DrawColRays((charLength / 2) - skin, (charHeight / 2) - skin);
         }
         if (moveUp || moveLeft)
         {
@@ -236,28 +240,28 @@ public class MainCharacterBehavior : MonoBehaviour
 
         if (moveRight)
         {
-            rayIter = -(charHeight/2) + skin + distanceBetweenRays;
-            for(int i = 0; i < verticleRayCount; i++)
+            rayIter = -(charHeight / 2) + skin + distanceBetweenRays;
+            for (int i = 0; i < verticleRayCount; i++)
             {
-                DrawColRays((charLength/2) - skin, rayIter);
+                DrawColRays((charLength / 2) - skin, rayIter);
                 rayIter += distanceBetweenRays;
             }
         }
         if (moveLeft)
         {
-            rayIter = -(charHeight/2) + skin + distanceBetweenRays;
-            for(int i = 0; i < verticleRayCount; i++)
+            rayIter = -(charHeight / 2) + skin + distanceBetweenRays;
+            for (int i = 0; i < verticleRayCount; i++)
             {
-                DrawColRays(-(charLength/2) + skin, rayIter);
+                DrawColRays(-(charLength / 2) + skin, rayIter);
                 rayIter += distanceBetweenRays;
             }
         }
         if (moveUp)
         {
             rayIter = -(charLength / 2) + skin + distanceBetweenRays;
-            for(int i = 0; i < horizontalRayCount; i++)
+            for (int i = 0; i < horizontalRayCount; i++)
             {
-                DrawColRays(rayIter, (charHeight/2) - skin);
+                DrawColRays(rayIter, (charHeight / 2) - skin);
                 rayIter += distanceBetweenRays;
 
             }
@@ -281,12 +285,12 @@ public class MainCharacterBehavior : MonoBehaviour
 
         if (debugMode)
         {
-            Debug.DrawRay( new Vector3(gameObject.transform.position.x + tempX, gameObject.transform.position.y + tempY, 0f), moveVector, Color.blue );
-            Debug.DrawRay( new Vector3(gameObject.transform.position.x - 1f, gameObject.transform.position.y + 1f, 0f), moveVector, Color.red );
+            Debug.DrawRay(new Vector3(gameObject.transform.position.x + tempX, gameObject.transform.position.y + tempY, 0f), moveVector, Color.blue);
+            Debug.DrawRay(new Vector3(gameObject.transform.position.x - 1f, gameObject.transform.position.y + 1f, 0f), moveVector, Color.red);
 
         }
 
-        colData = Physics2D.Raycast(new Vector2( gameObject.transform.position.x + tempX, gameObject.transform.position.y + tempY ), moveVector, moveVector.magnitude + extraRayDistance, groundMask);
+        colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x + tempX, gameObject.transform.position.y + tempY), moveVector, moveVector.magnitude + extraRayDistance, groundMask);
         if (colData.collider != null)
         {
 
@@ -370,6 +374,225 @@ public class MainCharacterBehavior : MonoBehaviour
 
     }
 
+    void WallShover2()
+    {
+
+
+        colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2), gameObject.transform.position.y + (charHeight / 2) + skin), new Vector2(1, 0), charLength, groundMask);
+        if (colData.collider != null)
+        {
+            gameObject.transform.Translate(0f, -pushout, 0f);
+        }
+        if (debugMode)
+        {
+            Debug.DrawRay(new Vector2(gameObject.transform.position.x - (charLength / 2), gameObject.transform.position.y + (charHeight / 2) + skin), new Vector2(charLength, 0), Color.yellow);
+        }
+        
+
+     
+        colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2), gameObject.transform.position.y - (charHeight / 2) - skin), new Vector2(1, 0), charLength, groundMask);
+        if (colData.collider != null)
+        {
+            gameObject.transform.Translate(0f, pushout, 0f);
+        }
+        if (debugMode)
+        {
+            Debug.DrawRay(new Vector2(gameObject.transform.position.x - (charLength / 2), gameObject.transform.position.y - (charHeight / 2) - skin), new Vector2(charLength, 0), Color.yellow);
+        }
+        
+
+
+        colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x + (charLength / 2) + skin, gameObject.transform.position.y - (charHeight / 2) + skin), new Vector2(0, 1), charHeight - skin, groundMask);
+        if (colData.collider != null)
+        {
+            gameObject.transform.Translate(-pushout, 0f, 0f);
+        }
+        if (debugMode)
+        {
+            Debug.DrawRay(new Vector2(gameObject.transform.position.x + (charLength / 2) + skin, gameObject.transform.position.y - (charHeight / 2)), new Vector2(0, charHeight), Color.yellow);
+        }
+        
+
+
+        colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2) - skin, gameObject.transform.position.y - (charHeight / 2) + skin), new Vector2(0, 1), charHeight - skin, groundMask);
+        if (colData.collider != null)
+        {
+            gameObject.transform.Translate(pushout, 0f, 0f);
+        }
+        if (debugMode)
+        {
+            Debug.DrawRay(new Vector2(gameObject.transform.position.x - (charLength / 2) - skin, gameObject.transform.position.y - (charHeight / 2)), new Vector2(0, charHeight), Color.yellow);
+        }
+        
+
+
+    }
+
+    void UseCollision()
+    {
+
+        if (grounded == true)
+        {
+            collisionType = 0;
+        }
+        else if (grounded == false)
+        {
+            collisionType = 1;
+        }
+
+        if (collisionType == 1)
+        {
+           //Debug.Log("Not Grounded");
+            MoveWithCollision();
+        }
+        else if (collisionType == 0)
+        {
+            //Debug.Log("Grounded");
+            MoveWithSlopeCollision();
+        }
+    }
+
+    void MoveWithSlopeCollision()
+    {
+
+        TestPlayerDirection();
+
+        originalXMovement = moveVector.x;
+        originalYCord = gameObject.transform.position.y;
+
+        if (moveRight)
+        {
+            DrawColRays((charLength / 2) - skin, -(charHeight / 2) + skin);
+            DrawColRays((charLength / 2) - skin, (charHeight / 2) - skin);
+
+            rayIter = -(charHeight / 2) + skin + distanceBetweenRays;
+            for (int i = 0; i < verticleRayCount; i++)
+            {
+                DrawColRays((charLength / 2) - skin, rayIter);
+                rayIter += distanceBetweenRays;
+            }
+        }
+        if (moveLeft)
+        {
+            DrawColRays(-(charLength / 2) + skin, -(charHeight / 2) + skin);
+            DrawColRays(-(charLength / 2) + skin, (charHeight / 2) - skin);
+
+            rayIter = -(charHeight / 2) + skin + distanceBetweenRays;
+            for (int i = 0; i < verticleRayCount; i++)
+            {
+                DrawColRays(-(charLength / 2) + skin, rayIter);
+                rayIter += distanceBetweenRays;
+            }
+        }
+
+        MovePlayer();
+        WallShover2();
+
+        if ((moveRight && moveVector.x < originalXMovement) || (moveLeft && moveVector.x > originalXMovement))
+        {
+            MoveUpSlope();
+        }
+        else
+        {
+            DropPlayerForSlope();
+        }
+
+
+
+
+
+
+    }
+
+    void CheckForFloor()
+    {
+        colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2) + skin, gameObject.transform.position.y - (charHeight / 2) - (groundCheckDistance)), new Vector2(1, 0), charLength - (skin * 2), groundMask);
+        if (colData.collider != null && moveVector.y == 0)
+        {
+            grounded = true;
+        }
+        else
+        {
+            grounded = false;
+        }
+
+        if (debugMode)
+        {
+            Debug.DrawRay(new Vector2(gameObject.transform.position.x - (charLength / 2), gameObject.transform.position.y - (charHeight / 2) - skin), new Vector2(charLength, 0), Color.red);
+        }
+    }
+
+    void MoveUpSlope()
+    {
+        WallShover();
+        moveVector.x = originalXMovement - moveVector.x;
+        moveVector.y = Mathf.Abs(moveVector.x) * slopeAngle;
+
+        moveUp = true;
+
+        if (moveRight)
+        {
+            rayIter = -(charHeight / 2) + skin + (distanceBetweenRays * 2);
+            for (int i = 1; i < verticleRayCount; i++)
+            {
+                DrawColRays((charLength / 2) - skin, rayIter);
+                rayIter += distanceBetweenRays;
+            }
+            
+        }
+        if (moveLeft)
+        {
+            rayIter = -(charHeight / 2) + skin + (distanceBetweenRays * 2);
+            for (int i = 1; i < verticleRayCount; i++)
+            {
+                DrawColRays(-(charLength / 2) + skin, rayIter);
+                rayIter += distanceBetweenRays;
+            }
+            
+        }
+        DrawColRays((charLength / 2) - skin, (charHeight / 2) - skin);
+        DrawColRays(-(charLength / 2) + skin, (charHeight / 2) - skin);
+
+        rayIter = -(charLength / 2) + skin + distanceBetweenRays;
+        for (int i = 0; i < horizontalRayCount; i++)
+        {
+            DrawColRays(rayIter, (charHeight / 2) - skin);
+            rayIter += distanceBetweenRays;
+
+        }
+
+        MovePlayer();
+        WallShover2();
+
+        DropPlayerForSlope();
+
+    }
+
+    void DropPlayerForSlope()
+    {
+        moveUp = false;
+        moveDown = true;
+        moveRight = false;
+        moveLeft = false;
+
+        moveVector.x = 0;
+        moveVector.y = (Mathf.Abs(originalXMovement) * -slopeAngle) + (originalYCord - gameObject.transform.position.y) - (distanceBetweenRays * 2);
+
+        DrawColRays((charLength / 2) - skin, -(charHeight / 2) + skin);
+        DrawColRays(-(charLength / 2) + skin, -(charHeight / 2) + skin);
+        rayIter = -(charLength / 2) + skin + distanceBetweenRays;
+        for (int i = 0; i < horizontalRayCount; i++)
+        {
+            DrawColRays(rayIter, -(charHeight / 2) + skin);
+            rayIter += distanceBetweenRays;
+
+        }
+
+
+        MovePlayer();
+        WallShover2();
+
+    }
 
 }
 
