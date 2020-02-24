@@ -499,9 +499,6 @@ public class MainCharacterBehavior : MonoBehaviour
 
 
 
-
-
-
     }
 
     void CheckForFloor()
@@ -532,7 +529,8 @@ public class MainCharacterBehavior : MonoBehaviour
 
         if (moveRight)
         {
-            rayIter = -(charHeight / 2) + skin + (distanceBetweenRays * 2);
+            DrawColRays((charLength / 2) - skin, -(charHeight / 2) + skin);
+            rayIter = -(charHeight / 2) + skin + distanceBetweenRays;
             for (int i = 1; i < verticleRayCount; i++)
             {
                 DrawColRays((charLength / 2) - skin, rayIter);
@@ -542,7 +540,8 @@ public class MainCharacterBehavior : MonoBehaviour
         }
         if (moveLeft)
         {
-            rayIter = -(charHeight / 2) + skin + (distanceBetweenRays * 2);
+            DrawColRays(-(charLength / 2) + skin, -(charHeight / 2) + skin);
+            rayIter = -(charHeight / 2) + skin + distanceBetweenRays;
             for (int i = 1; i < verticleRayCount; i++)
             {
                 DrawColRays(-(charLength / 2) + skin, rayIter);
@@ -561,6 +560,15 @@ public class MainCharacterBehavior : MonoBehaviour
 
         }
 
+        if (moveRight)
+        {
+            moveVector.x -= skin;
+        }
+        else if (moveLeft)
+        {
+            moveVector.x += skin;
+        }
+
         MovePlayer();
         WallShover2();
 
@@ -575,8 +583,11 @@ public class MainCharacterBehavior : MonoBehaviour
         moveRight = false;
         moveLeft = false;
 
+        gameObject.transform.Translate(0f, distanceBetweenRays, 0f);
+        WallShover2();
+
         moveVector.x = 0;
-        moveVector.y = (Mathf.Abs(originalXMovement) * -slopeAngle) + (originalYCord - gameObject.transform.position.y) - (distanceBetweenRays * 2);
+        moveVector.y = (Mathf.Abs(originalXMovement) * -slopeAngle) + (originalYCord - gameObject.transform.position.y - skin) - (distanceBetweenRays * 2);
 
         DrawColRays((charLength / 2) - skin, -(charHeight / 2) + skin);
         DrawColRays(-(charLength / 2) + skin, -(charHeight / 2) + skin);
