@@ -378,18 +378,20 @@ public class MainCharacterBehavior : MonoBehaviour
     {
 
 
-        colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2), gameObject.transform.position.y + (charHeight / 2) + skin), new Vector2(1, 0), charLength, groundMask);
-        if (colData.collider != null)
+        if (moveUp)
         {
-            gameObject.transform.Translate(0f, -pushout, 0f);
+            colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2), gameObject.transform.position.y + (charHeight / 2) + skin), new Vector2(1, 0), charLength, groundMask);
+            if (colData.collider != null)
+            {
+                gameObject.transform.Translate(0f, -pushout, 0f);
+            }
+            if (debugMode)
+            {
+                Debug.DrawRay(new Vector2(gameObject.transform.position.x - (charLength / 2), gameObject.transform.position.y + (charHeight / 2) + skin), new Vector2(charLength, 0), Color.yellow);
+            }
         }
-        if (debugMode)
-        {
-            Debug.DrawRay(new Vector2(gameObject.transform.position.x - (charLength / 2), gameObject.transform.position.y + (charHeight / 2) + skin), new Vector2(charLength, 0), Color.yellow);
-        }
-        
 
-     
+        
         colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2), gameObject.transform.position.y - (charHeight / 2) - skin), new Vector2(1, 0), charLength, groundMask);
         if (colData.collider != null)
         {
@@ -401,29 +403,32 @@ public class MainCharacterBehavior : MonoBehaviour
         }
         
 
+        if (moveRight)
+        {
+            colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x + (charLength / 2) + skin, gameObject.transform.position.y - (charHeight / 2)), new Vector2(0, 1), charHeight, groundMask);
+            if (colData.collider != null)
+            {
+                gameObject.transform.Translate(-pushout, 0f, 0f);
+            }
+            if (debugMode)
+            {
+                Debug.DrawRay(new Vector2(gameObject.transform.position.x + (charLength / 2) + skin, gameObject.transform.position.y - (charHeight / 2)), new Vector2(0, charHeight), Color.yellow);
+            }
+        }
 
-        colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x + (charLength / 2) + skin, gameObject.transform.position.y - (charHeight / 2) + skin), new Vector2(0, 1), charHeight - skin, groundMask);
-        if (colData.collider != null)
+        if (moveLeft)
         {
-            gameObject.transform.Translate(-pushout, 0f, 0f);
+            colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2) - skin, gameObject.transform.position.y - (charHeight / 2)), new Vector2(0, 1), charHeight, groundMask);
+            if (colData.collider != null)
+            {
+                gameObject.transform.Translate(pushout, 0f, 0f);
+            }
+            if (debugMode)
+            {
+                Debug.DrawRay(new Vector2(gameObject.transform.position.x - (charLength / 2) - skin, gameObject.transform.position.y - (charHeight / 2)), new Vector2(0, charHeight), Color.yellow);
+            }
         }
-        if (debugMode)
-        {
-            Debug.DrawRay(new Vector2(gameObject.transform.position.x + (charLength / 2) + skin, gameObject.transform.position.y - (charHeight / 2)), new Vector2(0, charHeight), Color.yellow);
-        }
-        
 
-
-        colData = Physics2D.Raycast(new Vector2(gameObject.transform.position.x - (charLength / 2) - skin, gameObject.transform.position.y - (charHeight / 2) + skin), new Vector2(0, 1), charHeight - skin, groundMask);
-        if (colData.collider != null)
-        {
-            gameObject.transform.Translate(pushout, 0f, 0f);
-        }
-        if (debugMode)
-        {
-            Debug.DrawRay(new Vector2(gameObject.transform.position.x - (charLength / 2) - skin, gameObject.transform.position.y - (charHeight / 2)), new Vector2(0, charHeight), Color.yellow);
-        }
-        
 
 
     }
@@ -486,7 +491,7 @@ public class MainCharacterBehavior : MonoBehaviour
         }
 
         MovePlayer();
-        WallShover();
+        WallShover2();
 
         if ((moveRight && moveVector.x < originalXMovement) || (moveLeft && moveVector.x > originalXMovement))
         {
@@ -572,7 +577,7 @@ public class MainCharacterBehavior : MonoBehaviour
         }
 
         MovePlayer();
-        WallShover();
+        WallShover2();
 
         DropPlayerForSlope();
 
@@ -603,7 +608,7 @@ public class MainCharacterBehavior : MonoBehaviour
 
 
         MovePlayer();
-        WallShover();
+        WallShover2();
 
     }
 
