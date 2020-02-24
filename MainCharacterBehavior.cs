@@ -486,7 +486,7 @@ public class MainCharacterBehavior : MonoBehaviour
         }
 
         MovePlayer();
-        WallShover2();
+        WallShover();
 
         if ((moveRight && moveVector.x < originalXMovement) || (moveLeft && moveVector.x > originalXMovement))
         {
@@ -563,14 +563,16 @@ public class MainCharacterBehavior : MonoBehaviour
         if (moveRight)
         {
             moveVector.x -= skin;
+            Debug.Log("Test");
         }
         else if (moveLeft)
         {
             moveVector.x += skin;
+            Debug.Log("Test2");
         }
 
         MovePlayer();
-        WallShover2();
+        WallShover();
 
         DropPlayerForSlope();
 
@@ -601,7 +603,7 @@ public class MainCharacterBehavior : MonoBehaviour
 
 
         MovePlayer();
-        WallShover2();
+        WallShover();
 
     }
 
